@@ -28,12 +28,14 @@ for kk in range(1,len(tt)):
 ### design du filtre passe-bas
 
 P=20
-b1 = scipy.signal.firwin(numtaps=2*P+1,cutoff=[0.25],window='hann',nyq=0.5)
+b1 = scipy.signal.firwin(numtaps=2*P+1,cutoff=[0.25],window='hann',fs=1)
+
 
 plt.figure(1,figsize=(10, 8))
 plt.plot(b1)
+plt.title('filtre passe-bas')
 plt.draw()
-plt.pause(1)
+
 
 w,h=scipy.signal.freqz(b1)
 
@@ -45,17 +47,18 @@ plt.subplot(212)
 plt.plot(w/(2*numpy.pi),numpy.unwrap(numpy.angle(h)))
 plt.xlabel('filtre passe-bas -- reponse en frequence - phase')
 plt.draw()
-plt.pause(1)
+
 
 ### design du filtre passe-haut
 
 P=20
-b2 = scipy.signal.firwin(numtaps=2*P+1,cutoff=[0.25],window='hann',nyq=0.5,pass_zero=False)
+b2 = scipy.signal.firwin(numtaps=2*P+1,cutoff=[0.25],window='hann',fs=1,pass_zero=False)
 
 plt.figure(3,figsize=(10, 8))
+plt.title('filtre passe-haut')
 plt.plot(b2)
 plt.draw()
-plt.pause(1)
+
 
 w2,h2=scipy.signal.freqz(b2)
 
@@ -67,7 +70,7 @@ plt.subplot(212)
 plt.plot(w2/(2*numpy.pi),numpy.unwrap(numpy.angle(h2)))
 plt.xlabel('filtre passe-haut -- reponse en frequence - phase')
 plt.draw()
-plt.pause(2)
+
 
 ### et maintenant on filtre notre sinusoïde
 
@@ -79,7 +82,7 @@ plt.plot(tt,xx)
 plt.subplot(212)
 plt.plot(tt,yy)
 plt.xlabel('filtre passe-bas')
-plt.pause(1)
+plt.draw()
 
 yy2=scipy.signal.filtfilt(b2, 1, xx)
 
@@ -89,5 +92,27 @@ plt.plot(tt,xx)
 plt.subplot(212)
 plt.plot(tt,yy2)
 plt.xlabel('filtre passe-haut')
-plt.pause(1)
+plt.draw()
 
+
+
+
+hilbert_passbas=numpy.unwrap(numpy.angle(scipy.signal.hilbert(yy)),period=2*numpy.pi)
+hilbert_passhaut=numpy.unwrap(numpy.angle(scipy.signal.hilbert(yy2)),period=2*numpy.pi)
+f_passbas = fs/(2*numpy.pi)*numpy.diff(hilbert_passbas)
+f_passhaut = fs/(2*numpy.pi)*numpy.diff(hilbert_passhaut)
+
+
+plt.figure()
+plt.plot(hilbert_passbas,color="red")
+plt.plot(hilbert_passhaut,color="blue")
+plt.show()
+
+plt.figure(7,figsize=(10, 10))
+plt.subplot(211)
+plt.plot(f_passbas)
+plt.title('filtre passe-bas')
+plt.subplot(212)
+plt.plot(f_passhaut)
+plt.title('filtre passe-haut')
+plt.show()
