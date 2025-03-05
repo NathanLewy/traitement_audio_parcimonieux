@@ -29,8 +29,8 @@ N=18
 T=2  # Durée du signal (2 secondes)
 t = np.linspace(0, T, int(T*fs))  # Temps de 1 seconde
 f_sinus = 500  # Fréquence du sinus (500 Hz)
-amplitude_sinus = 1  # Amplitude du sinus
-wave = 'sym10'  # Type d'ondelette
+amplitude_sinus = 0.5  # Amplitude du sinus
+wave = 'db35'  # Type d'ondelette
 
 # Génération du signal : un sinus + bruit blanc
 signal_sinus = amplitude_sinus * np.sin(2 * np.pi * f_sinus * t)
@@ -38,7 +38,7 @@ bruit = np.random.normal(0, 0.1, t.shape)  # Bruit blanc avec écart-type de 0.5
 signal_bruite = signal_sinus + bruit
 
 # Application de la DWT (décomposition en 3 niveaux)
-coeffs = pywt.wavedec(signal_bruite, wave, level=15)
+coeffs = pywt.wavedec(signal_bruite, wave, level=30)
 
 # Afficher les coefficients ligne par ligne
 G = [len(c) for c in coeffs]
@@ -73,7 +73,17 @@ plt.show()
 
 
 #RSB
-erreur1=sum((signal_sinus-signal_bruite)**2)/np.sum(signal_sinus**2)
-erreur2=sum((signal_sinus-signal_reduit)**2)/sum(signal_sinus**2)
-ratio=erreur1/erreur2
-print('RSB =',ratio)
+threshold_values = np.linspace(0.0001, 1, 100)
+ratios = []
+for i in range(len(threshold_values)):
+    coeffs_thresholded = [pywt.threshold(c, threshold_values[i], mode='soft') for c in coeffs]
+    signal_reduit = pywt.waverec(coeffs_thresholded, wave)
+    erreur1=sum((signal_sinus-signal_bruite)**2)/np.sum(signal_sinus**2)
+    erreur2=sum((signal_sinus-signal_reduit)**2)/sum(signal_sinus**2)
+    ratio=erreur1/erreur2
+    ratios.append(ratio)
+
+plt.plot(threshold_values, ratios)
+plt.xlabel('Threshold')
+plt.ylabel('RSB')
+plt.show()
