@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-path_apprentissage = "sons_oiseaux"
+path_apprentissage = 'sons_oiseaux'
 print(os.listdir())
 os.chdir(path_apprentissage)
 data = []
