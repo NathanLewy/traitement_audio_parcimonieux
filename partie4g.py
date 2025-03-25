@@ -28,35 +28,33 @@ def create_wavelet_dictionary(signal_length):
 
 def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=True):
     t1 = time.time()
-    residual = x.copy()
-    residual_list = [np.linalg.norm(residual)]
+    residual_list = [np.linalg.norm(x)]
     approx = np.zeros_like(x)
     coeffs = []
     indices = []
     
     for i in range(max_iter):
-        projections = dictionary.T @ residual
+        projections = dictionary.T @ (x - approx)
         k = np.argmax(np.abs(projections))  # Atome le plus corrélé
         a_k = projections[k]
         
         
         # Mise à jour
         approx += a_k * dictionary[:, k]
-        residual = x - approx
-        residual_list.append(np.linalg.norm(residual))
+        residual_list.append(np.linalg.norm(x - approx))
         
         coeffs.append(a_k)
         indices.append(k)
         
-        if np.linalg.norm(residual) < tol:
+        if np.linalg.norm(x - approx) < tol:
             print(f"Arrêt à l'itération {i} : résiduel inférieur à la tolérance.")
             break
     
     if verbose:
         t2 = time.time()
         print(f"Arrêt à l'itération     : {i}")
-        print(f'norme du résidu         : {np.linalg.norm(residual)}')
-        print(f'RSB                     : {np.linalg.norm(x)/np.linalg.norm(residual)}')
+        print(f'norme du résidu         : {np.linalg.norm(x - approx)}')
+        print(f'RSB                     : {np.linalg.norm(x)/np.linalg.norm(x - approx)}')
         print(f'tolérance du résidu     : {tol}')
         print(f'taille du dictionnaire  : {len(dictionary[0])}')
         print(f'temps d execution       : {t2-t1}')
@@ -67,19 +65,24 @@ def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=True):
         plt.plot(residual_list, label='erreur en dB en fonction de l\'itération')
         plt.legend()
         plt.show()
-    return approx, coeffs, indices, residual
+    return approx, coeffs, indices, x - approx
 
 def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
     i = 0
     t1 = time.time()
     n_coeffs=0
-    signal_recomposed = np.zeros(len(data)+(window_size-len(data)%window_size))
+    if len(data)%window_size>0:
+        signal_recomposed = np.zeros(len(data)+(window_size-len(data)%window_size))
+    else:
+        signal_recomposed = np.zeros(len(data))
+
     while i+window_size<len(data):
         x = data[i:window_size+i]*np.hamming(window_size)
         approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter, verbose=False)
         signal_recomposed[i:window_size+i]+=approx
         i+=step_size
         print(f'avancement du calcul {i/len(data)*100} %')
+
     x = np.pad(data[i:], (0, window_size-len(data[i:])), mode='constant')*np.hamming(window_size)
     approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter ,verbose=False)
     n_coeffs += len(coeffs)
@@ -90,7 +93,7 @@ def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
 
     t2 = time.time()
     print(f"Arrêt à l'itération     : {i}")
-    #print(f'RSB                     : {np.linalg.norm(data)/np.linalg.norm(data-signal_recomposed)}')
+    print(f'RSB                     : {np.linalg.norm(data)/np.linalg.norm(data-signal_recomposed[:len(data)])}')
     print(f'tolérance du résidu     : {tol}')
     print(f'taille du dictionnaire  : {len(dictionary[0])}')
     print(f'temps d execution       : {t2-t1}')
@@ -133,4 +136,4 @@ plt.show()
 
 
 #sur tout le signal
-compress(data, dictionary, window_size, 512, max_iter=100, tol=1e-7)
+compress(data, dictionary, window_size, 512, max_iter=500, tol=1e-7)
