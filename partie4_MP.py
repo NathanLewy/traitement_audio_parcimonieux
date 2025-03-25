@@ -7,13 +7,14 @@ import time
 import sounddevice as sd
 from scipy.signal import resample
 
+
 def create_wavelet_dictionary(signal_length):
     wavelet_names = pywt.wavelist(family='db',kind='discrete')  # Liste des ondelettes discrètes
     num_wavelets = len(wavelet_names)
-    
+    print(wavelet_names)
     dict_matrix = []
 
-    for i, wavelet_name in enumerate(wavelet_names):
+    for i, wavelet_name in enumerate(['db5', 'db1']):
         wavelet = pywt.Wavelet(wavelet_name)
         
         # Échantillonnage de l'ondelette mère
@@ -22,11 +23,11 @@ def create_wavelet_dictionary(signal_length):
             for pad in range(signal_length-len(wavelet_function[ordre])):
                 padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
                 dict_matrix.append(padded_wavelet/np.linalg.norm(padded_wavelet))
-    
+        
     return np.array(dict_matrix).T
 
 
-def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=True):
+def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=False):
     t1 = time.time()
     residual_list = [np.linalg.norm(x)]
     approx = np.zeros_like(x)
