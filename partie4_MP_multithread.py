@@ -9,7 +9,7 @@ from scipy.signal import resample
 from concurrent.futures import ThreadPoolExecutor
 
 def create_wavelet_dictionary(signal_length):
-    wavelet_names = ['db5', 'db1']
+    wavelet_names = ['sym5', 'db5']
     dict_matrix = []
     for wavelet_name in wavelet_names:
         wavelet = pywt.Wavelet(wavelet_name)
@@ -41,6 +41,7 @@ def process_window(args):
     return i, approx, len(coeffs)
 
 def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
+    t1 = time.time()
     signal_recomposed = np.zeros_like(data)
     n_coeffs = 0
     
@@ -59,8 +60,11 @@ def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
     plt.show()
     
     print(f'RSB : {np.linalg.norm(data)/np.linalg.norm(data - signal_recomposed[:len(data)])}')
-    print(f'Temps d’exécution : {time.time()}')
+    print(f'Temps d’exécution : {time.time()-t1}')
     print(f'Taux de compression : {len(data) / n_coeffs}')
+
+    sd.play(data, samplerate=sr)
+    sd.wait()
     
     sd.play(signal_recomposed, samplerate=sr)
     sd.wait()
@@ -71,4 +75,4 @@ data = resample(data, int(len(data) * 16000 / sr))
 sr = 16000
 window_size = 1024
 dictionary = create_wavelet_dictionary(window_size)
-compress(data, dictionary, window_size, 512, max_iter=500)
+compress(data, dictionary, window_size, 512, max_iter=100)
