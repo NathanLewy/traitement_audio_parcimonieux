@@ -8,8 +8,9 @@ import sounddevice as sd
 from scipy.signal import resample
 from concurrent.futures import ThreadPoolExecutor
 
+
 def create_wavelet_dictionary(signal_length,sr):
-    wavelet_names = ['sym5', 'db20']
+    wavelet_names = ['sym20']
     dict_matrix = []
     for wavelet_name in wavelet_names:
         wavelet = pywt.Wavelet(wavelet_name)
@@ -18,10 +19,10 @@ def create_wavelet_dictionary(signal_length,sr):
             for pad in range(signal_length - len(wavelet_function[ordre])):
                 padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
                 dict_matrix.append(padded_wavelet / np.linalg.norm(padded_wavelet))
-    for f in np.linspace(20, 20000, 10):
-        for phi in np.linspace(0, np.pi, 100):
-            x = np.cos(f*np.linspace(0,signal_length/sr, signal_length)+phi)
-            dict_matrix.append(x / np.linalg.norm(x))
+    #dct
+    for k in range(signal_length):
+        cos_k = np.cos([np.pi*(n + 1/2)* k / signal_length for n in range(signal_length)])
+        dict_matrix.append(cos_k/np.linalg.norm(cos_k))
     return np.array(dict_matrix).T
 
 
@@ -78,7 +79,7 @@ def orthogonal_matching_pursuit(x, dictionary, max_iter, tol=1e-4):
         coeffs = []
     
     # Reconstruction de l'approximation : somme pondérée (valeur absolue des coefficients)
-    approx = np.sum([np.abs(coeffs[i]) * liste_u[i] for i in range(len(coeffs))], axis=0)
+    approx = np.sum([coeffs[i] * liste_proj[i] for i in range(len(coeffs))], axis=0)
     
     # Pour rester compatible, on renvoie aussi les indices (ici, les indices correspondant aux atomes sélectionnés)
     indices = [np.argmax(np.abs(dictionary.T @ atom)) for atom in liste_proj]
@@ -93,7 +94,7 @@ def process_window(args):
     approx, coeffs, indices = orthogonal_matching_pursuit(x, dictionary, max_iter)
     return i, approx, len(coeffs)
 
-def compress(data, dictionary, window_size, step_size, max_iter):
+def compress(data, dictionary, window_size, step_size, max_iter, verbose = True):
     t1 = time.time()
     signal_recomposed = np.zeros_like(data)
     n_coeffs = 0
@@ -128,5 +129,6 @@ data, sr = sf.read(filepath)
 data = resample(data, int(len(data) * 16000 / sr))
 sr = 16000
 window_size = 1024
+step_size = 512
 dictionary = create_wavelet_dictionary(window_size, sr)
-compress(data, dictionary, window_size, 512, max_iter=150)
+compress(data, dictionary, window_size, step_size, max_iter=120)

@@ -8,22 +8,20 @@ import sounddevice as sd
 from scipy.signal import resample
 
 
-def create_wavelet_dictionary(signal_length):
-    wavelet_names = pywt.wavelist(family='db',kind='discrete')  # Liste des ondelettes discrètes
-    num_wavelets = len(wavelet_names)
-    print(wavelet_names)
+def create_wavelet_dictionary(signal_length,sr):
+    wavelet_names = ['sym20']
     dict_matrix = []
-
-    for i, wavelet_name in enumerate(['db5', 'db1']):
+    for wavelet_name in wavelet_names:
         wavelet = pywt.Wavelet(wavelet_name)
-        
-        # Échantillonnage de l'ondelette mère
-        wavelet_function = wavelet.wavefun(level=3)  # Approximation de l'ondelette mère
+        wavelet_function = wavelet.wavefun(level=3)
         for ordre in range(len(wavelet_function)-2):
-            for pad in range(signal_length-len(wavelet_function[ordre])):
+            for pad in range(signal_length - len(wavelet_function[ordre])):
                 padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
-                dict_matrix.append(padded_wavelet/np.linalg.norm(padded_wavelet))
-        
+                dict_matrix.append(padded_wavelet / np.linalg.norm(padded_wavelet))
+    #dct
+    for k in range(signal_length):
+        cos_k = np.cos([np.pi*(n + 1/2)* k / signal_length for n in range(signal_length)])
+        dict_matrix.append(cos_k/np.linalg.norm(cos_k))
     return np.array(dict_matrix).T
 
 
@@ -63,7 +61,10 @@ def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=False):
 
         plt.figure()
         plt.yscale('log')
-        plt.plot(residual_list, label='erreur en dB en fonction de l\'itération')
+        plt.plot(residual_list)
+        plt.title('erreur en dB en fonction de l\'itération')
+        plt.xlabel('n° iteration')
+        plt.ylabel('erreur en db')
         plt.legend()
         plt.show()
     return approx, coeffs, indices, x - approx
@@ -81,12 +82,14 @@ def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
         x = data[i:window_size+i]*np.hamming(window_size)
         approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter, verbose=False)
         signal_recomposed[i:window_size+i]+=approx
+        n_coeffs += len(coeffs)
+        print(len(coeffs))
         i+=step_size
         print(f'avancement du calcul {i/len(data)*100} %')
 
     x = np.pad(data[i:], (0, window_size-len(data[i:])), mode='constant')*np.hamming(window_size)
     approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter ,verbose=False)
-    n_coeffs += len(coeffs)
+    
     signal_recomposed[i:]+=approx
     plt.plot(data)
     plt.plot(signal_recomposed)
@@ -122,9 +125,9 @@ start = int(0.5*len(data))
 x=  data[start:start+window_size]
 x = x*np.hamming(window_size)
 t = np.linspace(0, window_size/sr, window_size)
-dictionary = create_wavelet_dictionary(window_size)
+dictionary = create_wavelet_dictionary(window_size, sr)
 
-approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=400)
+approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=400, verbose=True)
 
 plt.figure(figsize=(10, 6))
 plt.plot(t, x, label='Signal original')
@@ -137,4 +140,4 @@ plt.show()
 
 
 #sur tout le signal
-compress(data, dictionary, window_size, 512, max_iter=500, tol=1e-7)
+compress(data, dictionary, window_size, 512, max_iter=150, tol=1e-7)

@@ -8,8 +8,9 @@ import sounddevice as sd
 from scipy.signal import resample
 from concurrent.futures import ThreadPoolExecutor
 
+
 def create_wavelet_dictionary(signal_length):
-    wavelet_names = ['sym5', 'db5']
+    wavelet_names = ['sym20']
     dict_matrix = []
     for wavelet_name in wavelet_names:
         wavelet = pywt.Wavelet(wavelet_name)
@@ -18,6 +19,10 @@ def create_wavelet_dictionary(signal_length):
             for pad in range(signal_length - len(wavelet_function[ordre])):
                 padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
                 dict_matrix.append(padded_wavelet / np.linalg.norm(padded_wavelet))
+    #dct
+    for k in range(signal_length):
+        cos_k = np.cos([np.pi*(n + 1/2)* k / signal_length for n in range(signal_length)])
+        dict_matrix.append(cos_k/np.linalg.norm(cos_k))
     return np.array(dict_matrix).T
 
 def matching_pursuit(x, dictionary, max_iter, tol=1e-7):
