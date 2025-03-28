@@ -7,16 +7,15 @@ import time
 import sounddevice as sd
 from scipy.signal import resample
 from concurrent.futures import ThreadPoolExecutor
+from scipy.optimize import linprog
+
 
 
 class MatchingPursuitSolver:
-    """Classe pour l'algorithme Matching Pursuit."""
-    
     def __init__(self, max_iter=120):
         self.max_iter = max_iter
 
     def solve(self, x, dictionary, tol=1e-7):
-        """Applique l'algorithme Matching Pursuit."""
         approx = np.zeros_like(x)
         coeffs, indices = [], []
         for _ in range(self.max_iter):
@@ -31,14 +30,10 @@ class MatchingPursuitSolver:
         return approx, coeffs, indices
 
 class OrthogonalMatchingPursuitSolver:
-    """Classe pour l'algorithme Orthogonal Matching Pursuit."""
-    
     def __init__(self, max_iter=120):
         self.max_iter = max_iter
 
     def solve(self, x, dictionary, tol=1e-4):
-        """Applique l'algorithme Orthogonal Matching Pursuit (OMP)."""
-        # Initialisation du résidu et des listes pour stocker les atomes sélectionnés
         r = x.copy()
         liste_proj = []  # Atomes bruts sélectionnés dans le dictionnaire
         liste_u = []     # Vecteurs orthonormaux issus de l'innovation
@@ -79,38 +74,48 @@ class OrthogonalMatchingPursuitSolver:
             liste_proj.append(meilleur_atome)
             liste_u.append(vecteur_orthogonal)
 
-        # Construction de la matrice M reliant la base orthonormale aux atomes sélectionnés
-        M = np.matmul(np.array(liste_u), np.array(liste_proj).T)
-        
-        # Construction du vecteur m contenant les corrélations du signal avec la base orthonormale
-        m_vec = np.array([np.dot(x, u) for u in liste_u])
-
         # Résolution du système linéaire pour obtenir les coefficients finaux
+        M = np.matmul(np.array(liste_u), np.array(liste_proj).T)
+        m_vec = np.array([np.dot(x, u) for u in liste_u])
         if M.shape[0] > 0:
             coeffs = np.linalg.solve(M, m_vec)
         else:
             coeffs = []
-
-        # Reconstruction de l'approximation : somme pondérée (valeur absolue des coefficients)
         approx = np.sum([coeffs[i] * liste_proj[i] for i in range(len(coeffs))], axis=0)
-
-        # Pour rester compatible, on renvoie aussi les indices (ici, les indices correspondant aux atomes sélectionnés)
         indices = [np.argmax(np.abs(dictionary.T @ atom)) for atom in liste_proj]
 
         return approx, coeffs, indices
 
+class BasisPursuitSolver:
+    def __init__(self, max_iter):
+        pass
+    
+    def solve(self, x, dictionary):
+        m, n = dictionary.shape
+        c = np.hstack([np.ones(n), np.ones(n)])  # Fonction objectif : somme des variables auxiliaires
+        
+        # Contrainte : x = D*alpha -> D * (alpha+ - alpha-) = x
+        A_eq = np.hstack([dictionary, -dictionary])
+        b_eq = x
+        
+        # Contraintes de positivité des variables auxiliaires alpha+ et alpha-
+        bounds = [(0, None) for _ in range(2*n)]
+        
+        # Résolution du problème d'optimisation linéaire
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+        
+        if result.success:
+            alpha = result.x[:n] - result.x[n:]  # Reconstruction du vecteur de coefficients
+            approx = dictionary @ alpha  # Reconstruction du signal
+            indices = np.nonzero(alpha)[0].tolist()  # Indices des atomes sélectionnés
+            return approx, alpha, indices
+        else:
+            print("Basis Pursuit n'a pas convergé.")
+            return np.zeros_like(x), [], []
+
+
 class AudioCompressor:
-    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=120, sr=16000, wavelet_name='sym20', solver_type='omp'):
-        """
-        Constructeur de la classe AudioCompressor.
-        :param file_path: Chemin du fichier audio.
-        :param window_size: Taille de la fenêtre de transformation.
-        :param step_size: Pas de la fenêtre.
-        :param max_iter: Nombre d'itérations pour le solveur.
-        :param sr: Fréquence d'échantillonnage de l'audio.
-        :param wavelet_name: Nom de la vaguelette utilisée.
-        :param solver_type: Le solveur à utiliser ('omp' ou 'mp').
-        """
+    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=120, sr=16000, wavelet_name='sym20', solver_type='mp'):
         self.file_path = file_path
         self.window_size = window_size
         self.step_size = step_size
@@ -127,17 +132,17 @@ class AudioCompressor:
             self.solver = MatchingPursuitSolver(max_iter)
         elif self.solver_type == 'omp':
             self.solver = OrthogonalMatchingPursuitSolver(max_iter)
+        elif self.solver_type == 'bs':
+            self.solver = BasisPursuitSolver(max_iter)
         else:
             raise ValueError("Solver must be either 'omp' or 'mp'.")
 
     def load_audio(self, file_path, target_sr):
-        """Charge l'audio depuis un fichier et le resample à la fréquence d'échantillonnage souhaitée."""
         data, sr = sf.read(file_path)
         data = resample(data, int(len(data) * target_sr / sr))
         return data, target_sr
 
     def create_wavelet_dictionary(self, signal_length):
-        """Génère un dictionnaire basé sur des ondelettes et des cosinus."""
         dict_matrix = []
         wavelet = pywt.Wavelet(self.wavelet_name)
         wavelet_function = wavelet.wavefun(level=3)
@@ -154,7 +159,6 @@ class AudioCompressor:
         return np.array(dict_matrix).T
 
     def process_window(self, args):
-        """Traite chaque fenêtre du signal audio."""
         data, dictionary, window_size, step_size, i = args
         x = data[i:i + window_size] * np.hamming(window_size)
         
@@ -164,7 +168,6 @@ class AudioCompressor:
         return i, approx, len(coeffs)
 
     def compress(self):
-        """Effectue la compression audio."""
         self.t1 = time.time()
         signal_recomposed = np.zeros_like(self.data)
         n_coeffs = 0
@@ -220,6 +223,14 @@ class AudioCompressor:
 if __name__ == "__main__":
     file_path = os.path.abspath('./audio_partie4/a.wav')
     liste_maxit = range(10,150, 10)
+
+    print('\n basis pursuit :')
+
+    #attention le maxiter ne sert pas pour la basis pursuit
+    solver_type = 'bs' 
+    compressor = AudioCompressor(file_path, solver_type=solver_type)
+    approx, tcomp, RSB, tex = compressor.compress()
+    compressor.compression_report()
 
     print('\n matching pursuit :')
     
