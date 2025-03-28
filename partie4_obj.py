@@ -216,7 +216,7 @@ if __name__ == "__main__":
     wavelet_list = pywt.wavelist(kind='discrete')
     max=0
     best_dict=[]
-    for loop in range(100):
+    for loop in range(1):
         print(loop, best_dict)
         wavelet_names = np.random.choice(wavelet_list,2, replace=False)
         solver_type = 'mp' 
@@ -245,7 +245,6 @@ if __name__ == "__main__":
     for i in liste_maxit:
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
-        compressor.compression_report()
         liste_RSB.append(RSB)
         liste_tex.append(tex)
         liste_tcomp.append(tcomp)
@@ -284,7 +283,6 @@ if __name__ == "__main__":
         print(i)
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
-        compressor.compression_report()
         liste_RSB.append(RSB)
         liste_tex.append(tex)
         liste_tcomp.append(tcomp)
