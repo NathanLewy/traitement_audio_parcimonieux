@@ -8,6 +8,8 @@ import sounddevice as sd
 from scipy.signal import resample
 from concurrent.futures import ThreadPoolExecutor
 from scipy.optimize import linprog
+from scipy.signal import butter, filtfilt
+
 
 
 
@@ -86,42 +88,14 @@ class OrthogonalMatchingPursuitSolver:
 
         return approx, coeffs, indices
 
-class BasisPursuitSolver:
-    def __init__(self, max_iter):
-        pass
-    
-    def solve(self, x, dictionary):
-        m, n = dictionary.shape
-        c = np.hstack([np.ones(n), np.ones(n)])  # Fonction objectif : somme des variables auxiliaires
-        
-        # Contrainte : x = D*alpha -> D * (alpha+ - alpha-) = x
-        A_eq = np.hstack([dictionary, -dictionary])
-        b_eq = x
-        
-        # Contraintes de positivité des variables auxiliaires alpha+ et alpha-
-        bounds = [(0, None) for _ in range(2*n)]
-        
-        # Résolution du problème d'optimisation linéaire
-        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='interior-point')
-        
-        if result.success:
-            alpha = result.x[:n] - result.x[n:]  # Reconstruction du vecteur de coefficients
-            approx = dictionary @ alpha  # Reconstruction du signal
-            indices = np.nonzero(alpha)[0].tolist()  # Indices des atomes sélectionnés
-            return approx, alpha, indices
-        else:
-            print("Basis Pursuit n'a pas convergé.")
-            return np.zeros_like(x), [], []
-
-
 class AudioCompressor:
-    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=120, sr=16000, wavelet_name='sym20', solver_type='mp'):
+    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=120, sr=16000, wavelet_names=['rbio5.5','bior3.1'], solver_type='mp'):
         self.file_path = file_path
         self.window_size = window_size
         self.step_size = step_size
         self.max_iter = max_iter
         self.sr = sr
-        self.wavelet_name = wavelet_name
+        self.wavelet_names = wavelet_names
         self.solver_type = solver_type
         self.data, self.sr = self.load_audio(file_path, sr)
         self.dictionary = self.create_wavelet_dictionary(window_size)
@@ -132,24 +106,38 @@ class AudioCompressor:
             self.solver = MatchingPursuitSolver(max_iter)
         elif self.solver_type == 'omp':
             self.solver = OrthogonalMatchingPursuitSolver(max_iter)
-        elif self.solver_type == 'bs':
-            self.solver = BasisPursuitSolver(max_iter)
         else:
             raise ValueError("Solver must be either 'omp' or 'mp'.")
 
     def load_audio(self, file_path, target_sr):
         data, sr = sf.read(file_path)
         data = resample(data, int(len(data) * target_sr / sr))
+        data = self.bandpass_filter(data, lowcut=20, highcut=7900, fs=target_sr)
         return data, target_sr
+    
+    def bandpass_filter(self, data, lowcut=20, highcut=15000, fs=44100, order=5):
+        nyquist = 0.5 * fs  # Fréquence de Nyquist
+        low = lowcut / nyquist
+        high = highcut / nyquist
+
+        if not (0 < low < 1 and 0 < high < 1):
+            raise ValueError(f"lowcut ({lowcut} Hz) et highcut ({highcut} Hz) doivent être entre 0 et {nyquist} Hz")
+
+        b, a = butter(order, [low, high], btype='band')
+        return filtfilt(b, a, data)
+
+
+
 
     def create_wavelet_dictionary(self, signal_length):
         dict_matrix = []
-        wavelet = pywt.Wavelet(self.wavelet_name)
-        wavelet_function = wavelet.wavefun(level=3)
-        for ordre in range(len(wavelet_function) - 2):
-            for pad in range(signal_length - len(wavelet_function[ordre])):
-                padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
-                dict_matrix.append(padded_wavelet / np.linalg.norm(padded_wavelet))
+        for wavelet_name in self.wavelet_names:
+            wavelet = pywt.Wavelet(wavelet_name)
+            wavelet_function = wavelet.wavefun(level=3)
+            for ordre in range(len(wavelet_function) - 2):
+                for pad in range(signal_length - len(wavelet_function[ordre])):
+                    padded_wavelet = np.pad(wavelet_function[ordre], (pad, signal_length - len(wavelet_function[ordre]) - pad), mode='constant')
+                    dict_matrix.append(padded_wavelet / np.linalg.norm(padded_wavelet))
 
         # Ajout des cosinus
         for k in range(signal_length):
@@ -224,13 +212,24 @@ if __name__ == "__main__":
     file_path = os.path.abspath('./audio_partie4/a.wav')
     liste_maxit = range(10,150, 10)
 
-    print('\n basis pursuit :')
+    print('Recherche meilleur dico :')
+    wavelet_list = pywt.wavelist(kind='discrete')
+    max=0
+    best_dict=[]
+    for loop in range(100):
+        print(loop, best_dict)
+        wavelet_names = np.random.choice(wavelet_list,2, replace=False)
+        solver_type = 'mp' 
+        compressor = AudioCompressor(file_path, solver_type=solver_type,wavelet_names=wavelet_names)
+        compressor.change_maxit(50)
+        approx, tcomp, RSB, tex = compressor.compress()
+        if RSB >max:
+            best_dict = wavelet_names
+            max = RSB
+    
+    print(f'meilleur dico trouvé sur cette itération : {wavelet_names}')
+    print(f'on prend finalement : [\'rbio5.5\' \'bior3.1\']')
 
-    #attention le maxiter ne sert pas pour la basis pursuit
-    solver_type = 'bs' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type)
-    approx, tcomp, RSB, tex = compressor.compress()
-    compressor.compression_report()
 
     print('\n matching pursuit :')
     
@@ -246,6 +245,7 @@ if __name__ == "__main__":
     for i in liste_maxit:
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
+        compressor.compression_report()
         liste_RSB.append(RSB)
         liste_tex.append(tex)
         liste_tcomp.append(tcomp)
@@ -284,6 +284,7 @@ if __name__ == "__main__":
         print(i)
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
+        compressor.compression_report()
         liste_RSB.append(RSB)
         liste_tex.append(tex)
         liste_tcomp.append(tcomp)
