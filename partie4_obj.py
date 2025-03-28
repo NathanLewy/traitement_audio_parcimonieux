@@ -102,7 +102,7 @@ class BasisPursuitSolver:
         bounds = [(0, None) for _ in range(2*n)]
         
         # Résolution du problème d'optimisation linéaire
-        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='highs')
+        result = linprog(c, A_eq=A_eq, b_eq=b_eq, bounds=bounds, method='interior-point')
         
         if result.success:
             alpha = result.x[:n] - result.x[n:]  # Reconstruction du vecteur de coefficients
