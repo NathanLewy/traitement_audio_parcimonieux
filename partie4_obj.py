@@ -219,7 +219,48 @@ class AudioCompressor:
 
 if __name__ == "__main__":
     file_path = os.path.abspath('./audio_partie4/a.wav')
+    liste_maxit = range(10,150, 10)
 
+    print('\n matching pursuit :')
+    
+    solver_type = 'mp' 
+    compressor = AudioCompressor(file_path, solver_type=solver_type)
+    approx, tcomp, RSB, tex = compressor.compress()
+    compressor.compression_report()
+    
+    liste_RSB=[]
+    liste_tex=[]
+    liste_tcomp = []
+
+    for i in liste_maxit:
+        compressor.change_maxit(i)
+        approx, tcomp, RSB, tex = compressor.compress()
+        liste_RSB.append(RSB)
+        liste_tex.append(tex)
+        liste_tcomp.append(tcomp)
+
+    plt.figure()
+    plt.plot(liste_maxit, liste_RSB)
+    plt.xlabel('maxit')
+    plt.ylabel('RSB')
+    plt.title('MP - RSB en fonction de maxit')
+    plt.show()
+
+    plt.figure()
+    plt.plot(liste_maxit, liste_tex)
+    plt.xlabel('maxit')
+    plt.ylabel('temps d\'execution')
+    plt.title('MP - temps d\'execution en fonction de maxit')
+    plt.show()
+    
+    plt.figure()
+    plt.plot(liste_maxit, liste_tcomp)
+    plt.xlabel('maxit')
+    plt.ylabel('taux de compression')
+    plt.title('MP - taux de compression en fonction de maxit')
+    plt.show()
+
+    print('\n orthogonal matching pursuit :')
     solver_type = 'omp' 
     compressor = AudioCompressor(file_path, solver_type=solver_type)
     approx, tcomp, RSB, tex = compressor.compress()
@@ -227,62 +268,36 @@ if __name__ == "__main__":
 
     liste_RSB=[]
     liste_tex=[]
-    liste_maxit = range(10,120,10)
-    plt.figure()
+    liste_tcomp=[]
     for i in liste_maxit:
         print(i)
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
         liste_RSB.append(RSB)
         liste_tex.append(tex)
-        plt.plot(approx, color='g', alpha=1/len(liste_maxit))
-    plt.show()
+        liste_tcomp.append(tcomp)
+
 
     plt.figure()
     plt.plot(liste_maxit, liste_RSB)
     plt.xlabel('maxit')
     plt.ylabel('RSB')
-    plt.title('RSB en fonction de maxit')
+    plt.title('OMP - RSB en fonction de maxit')
     plt.show()
 
     plt.figure()
     plt.plot(liste_maxit, liste_tex)
     plt.xlabel('maxit')
     plt.ylabel('temps d\'execution')
-    plt.title('temps d\'execution en fonction de maxit')
-    plt.show()
-
-
-    
-    solver_type = 'mp' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type)
-    approx, tcomp, RSB, tex = compressor.compress()
-    compressor.compression_report()
-
-    
-    liste_RSB=[]
-    liste_tex=[]
-    liste_maxit = range(10,120,10)
-    plt.figure()
-    for i in liste_maxit:
-        compressor.change_maxit(i)
-        approx, tcomp, RSB, tex = compressor.compress()
-        liste_RSB.append(RSB)
-        liste_tex.append(tex)
-        plt.plot(approx, color='black', alpha=1/len(liste_maxit))
+    plt.title('OMP - temps d\'execution en fonction de maxit')
     plt.show()
 
     plt.figure()
-    plt.plot(liste_maxit, liste_RSB)
+    plt.plot(liste_maxit, liste_tcomp)
     plt.xlabel('maxit')
-    plt.ylabel('RSB')
-    plt.title('RSB en fonction de maxit')
+    plt.ylabel('taux de compression')
+    plt.title('OMP - taux de compression en fonction de maxit')
     plt.show()
 
-    plt.figure()
-    plt.plot(liste_maxit, liste_tex)
-    plt.xlabel('maxit')
-    plt.ylabel('temps d\'execution')
-    plt.title('temps d\'execution en fonction de maxit')
-    plt.show()
+
     
