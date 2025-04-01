@@ -31,8 +31,8 @@ database_folder = '/home/pierres/ST7/traitement_audio_parcimonieux/TL_3_pierre/d
 X_SONS, X_SONS_VC, y_SONS, y_SONS_VC = charger_donnees(database_folder)
 
 # Définir une gamme de valeurs pour gamma (RBF)
-gammas = np.logspace(-1, 1, 10)  # Réduire pour la visualisation
-C_list = np.logspace(-5, 5, 10)  # Réduire pour la visualisation
+gammas = np.logspace(-1, 1, 2)  # Réduire pour la visualisation
+C_list = np.logspace(-5, 5, 2)  # Réduire pour la visualisation
 
 scaler = StandardScaler()
 X_SONS = scaler.fit_transform(X_SONS)

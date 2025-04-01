@@ -17,12 +17,12 @@ def obtenir_frequence_et_amplitude(chemin_fichier, zero_padding_factor=100):
         donnees_audio = np.frombuffer(donnees_audio, dtype=np.int16)
 
     # Appliquer le zero-padding
-    n_echantillons_padded = n_echantillons * zero_padding_factor
-    donnees_audio_padded = np.zeros(n_echantillons_padded, dtype=donnees_audio.dtype)
-    donnees_audio_padded[:n_echantillons] = donnees_audio
+    #n_echantillons_padded = n_echantillons * zero_padding_factor
+    #donnees_audio_padded = np.zeros(n_echantillons_padded, dtype=donnees_audio.dtype)
+    #donnees_audio_padded[:n_echantillons] = donnees_audio
 
     # Calculer la transformée de Fourier
-    fft_result = np.fft.fft(donnees_audio_padded)
+    fft_result = np.fft.fft(donnees_audio, n_fft=2**20)
     frequences = np.fft.fftfreq(len(fft_result), 1 / frequence_echantillonnage)
 
     # Trouver la fréquence avec l'amplitude maximale
