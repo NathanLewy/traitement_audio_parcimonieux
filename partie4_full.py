@@ -89,7 +89,7 @@ class OrthogonalMatchingPursuitSolver:
         return approx, coeffs, indices
 
 class AudioCompressor:
-    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=120, sr=16000, wavelet_names=['rbio5.5','bior3.1'], solver_type='mp'):
+    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=80, sr=16000, wavelet_names=['rbio5.5','bior3.1'], solver_type='mp'):
         self.file_path = file_path
         self.window_size = window_size
         self.step_size = step_size
@@ -174,17 +174,21 @@ class AudioCompressor:
         self.t2 = time.time()
         self.n_coeffs = n_coeffs
         self.signal_recomposed = signal_recomposed
-        self.solved = True
 
-        return signal_recomposed, len(self.data) * 32 / (self.n_coeffs * (32 + np.log2(len(self.dictionary.T)))), np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)]), self.t2 - self.t1
-    
+        self.solved = True
+        self.approx = signal_recomposed
+        self.tcomp = len(self.data) * 32 / (self.n_coeffs * (32 + np.log2(len(self.dictionary.T))))
+        self.RSB = (np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)]))**2
+        self.tex = self.t2 - self.t1
+
+        return self.approx, self.tcomp, self.RSB, self.tex
     def compression_report(self):
         if self.solved:
             self.plot_results(self.signal_recomposed)
 
-            print(f'RSB : {np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)])}')
-            print(f'Temps d’exécution : {self.t2 - self.t1}')
-            print(f'Taux de compression : {len(self.data) * 32 / (self.n_coeffs * (32 + np.log2(len(self.dictionary.T))))}')
+            print(f'RSB : {self.RSB}')
+            print(f'Temps d’exécution : {self.tex}')
+            print(f'Taux de compression : {self.tcomp}')
 
             # Lecture audio
             self.play_audio(self.data)
@@ -231,18 +235,21 @@ if __name__ == "__main__":
     print(f'on prend finalement : [rbio3.3 bior3.5 bior5.5 bior6.8]')
 
     best_dict = ['rbio3.3', 'bior3.5', 'bior5.5', 'bior6.8']
-    print('\n matching pursuit :')
+    
     
     solver_type = 'mp' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict)
+    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict[:2])
+    print(f'forme du dictionnaire : {np.shape(compressor.dictionary)}')
     approx, tcomp, RSB, tex = compressor.compress()
     compressor.compression_report()
     
+    print('\n matching pursuit :')
     liste_RSB=[]
     liste_tex=[]
     liste_tcomp = []
 
     for i in liste_maxit:
+        print(i)
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
         liste_RSB.append(RSB)
