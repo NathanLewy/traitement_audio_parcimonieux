@@ -9,7 +9,7 @@ from scipy.signal import resample
 
 
 def create_wavelet_dictionary(signal_length,sr):
-    wavelet_names = ['sym20']
+    wavelet_names = ['sym20', 'db30']
     dict_matrix = []
     for wavelet_name in wavelet_names:
         wavelet = pywt.Wavelet(wavelet_name)
@@ -138,6 +138,16 @@ plt.legend()
 plt.title("Approximation du signal par Matching Pursuit avec ondelettes")
 plt.show()
 
+#affiche quelques atomes du dictionnaire
+N_atomes_show = 4
+plt.figure()
+plt.title('Quelques atomes')
+for i in range(N_atomes_show):
+    plt.subplot(N_atomes_show, 1, i +1)
+    random_idex = np.random.randint(1,np.shape(dictionary)[1])
+    atome_ = dictionary[:, random_idex].T
+    plt.plot(np.linspace(0, len(atome_)/sr, len(atome_)), atome_)
+plt.show()
 
 #sur tout le signal
 compress(data, dictionary, window_size, 512, max_iter=150, tol=1e-7)

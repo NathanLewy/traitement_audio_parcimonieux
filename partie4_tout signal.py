@@ -176,7 +176,7 @@ class AudioCompressor:
         self.signal_recomposed = signal_recomposed
         self.solved = True
 
-        return signal_recomposed, len(self.data) / self.n_coeffs, np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)]), self.t2 - self.t1
+        return signal_recomposed, len(self.data) * 32 / (self.n_coeffs * (32 + np.log2(len(self.dictionary.T)))), np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)]), self.t2 - self.t1
     
     def compression_report(self):
         if self.solved:
@@ -184,7 +184,7 @@ class AudioCompressor:
 
             print(f'RSB : {np.linalg.norm(self.data) / np.linalg.norm(self.data - self.signal_recomposed[:len(self.data)])}')
             print(f'Temps d’exécution : {self.t2 - self.t1}')
-            print(f'Taux de compression : {len(self.data) / self.n_coeffs}')
+            print(f'Taux de compression : {len(self.data) * 32 / (self.n_coeffs * (32 + np.log2(len(self.dictionary.T))))}')
 
             # Lecture audio
             self.play_audio(self.data)
