@@ -216,9 +216,9 @@ if __name__ == "__main__":
     wavelet_list = pywt.wavelist(kind='discrete')
     max=0
     best_dict=[]
-    for loop in range(1):
+    for loop in range(1000):
         print(loop, best_dict)
-        wavelet_names = np.random.choice(wavelet_list,2, replace=False)
+        wavelet_names = np.random.choice(wavelet_list,4, replace=False)
         solver_type = 'mp' 
         compressor = AudioCompressor(file_path, solver_type=solver_type,wavelet_names=wavelet_names)
         compressor.change_maxit(50)
@@ -234,7 +234,7 @@ if __name__ == "__main__":
     print('\n matching pursuit :')
     
     solver_type = 'mp' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type)
+    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict)
     approx, tcomp, RSB, tex = compressor.compress()
     compressor.compression_report()
     
