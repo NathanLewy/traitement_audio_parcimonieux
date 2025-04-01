@@ -216,7 +216,7 @@ if __name__ == "__main__":
     wavelet_list = pywt.wavelist(kind='discrete')
     max=0
     best_dict=[]
-    for loop in range(1000):
+    for loop in range(1):
         print(loop, best_dict)
         wavelet_names = np.random.choice(wavelet_list,4, replace=False)
         solver_type = 'mp' 
@@ -228,9 +228,9 @@ if __name__ == "__main__":
             max = RSB
     
     print(f'meilleur dico trouvé sur cette itération : {wavelet_names}')
-    print(f'on prend finalement : [\'rbio5.5\' \'bior3.1\']')
+    print(f'on prend finalement : [rbio3.3 bior3.5 bior5.5 bior6.8]')
 
-
+    best_dict = ['rbio3.3', 'bior3.5', 'bior5.5', 'bior6.8']
     print('\n matching pursuit :')
     
     solver_type = 'mp' 
