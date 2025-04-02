@@ -213,10 +213,10 @@ class AudioCompressor:
         self.solver.max_iter = newmaxit
 
 if __name__ == "__main__":
-    file_path = os.path.abspath('./audio_partie4/a.wav')
+    file_path = os.path.abspath('./Partie_4/audio_partie4/a.wav')
     liste_maxit = range(10,150, 10)
 
-    print('Recherche meilleur dico :')
+    print('Recherche meilleur dico (changer dans le code le nombre d\'itérations pour refaire une recherche de dictionnaire):')
     wavelet_list = pywt.wavelist(kind='discrete')
     max=0
     best_dict=[]

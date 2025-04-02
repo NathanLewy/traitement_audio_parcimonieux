@@ -112,7 +112,7 @@ def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
 
 
 # Chargement du signal a 16 kHz
-filepath = os.path.abspath('./audio_partie4/a.wav')
+filepath = os.path.abspath('./Partie_4/audio_partie4/a.wav')
 data, sr = sf.read(filepath)
 new_sr = 16000
 num_samples = int(len(data) * new_sr / sr)
