@@ -18,7 +18,7 @@ signal = sum(np.sin(2 * np.pi * f0 * h * t) for h in harmonics)
 signal = (signal / np.max(np.abs(signal)) * 32767).astype(np.int16)
 
 # Sauvegarde du signal dans un fichier WAV
-wav.write("C:/Users/timod/OneDrive/Documents/CS 2A/S8/Représentation parcimonieuse des signaux/TL/TL_part1.wav", fs, signal)
+wav.write("./Partie1_4sinus.wav", fs, signal)
 
 
 # Affichage du signal temporel
@@ -50,7 +50,7 @@ signal_vibrato = sum(np.sin(2 * np.pi * (h * f0 * t - (Av / (2 * np.pi * fv)) * 
 signal_vibrato = (signal_vibrato / np.max(np.abs(signal_vibrato)) * 32767).astype(np.int16)
 
 # Sauvegarde du fichier audio
-wav.write("C:/Users/timod/OneDrive/Documents/CS 2A/S8/Représentation parcimonieuse des signaux/TL/TL_part1_vibrato.wav", fs, signal_vibrato)
+wav.write("./Partie1_vibrato.wav", fs, signal_vibrato)
 
 # Affichage du signal temporel
 plt.figure()
