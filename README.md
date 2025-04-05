@@ -40,7 +40,7 @@ Ce repository rassemble toutes les réponses au travaux de laboratoire sur la re
 Les dépendances nécessaires sont listées dans le fichier [`requirements.txt`](requirements.txt). Installez-les avec la commande suivante :
 
 ```bash
-pip install -r [requirements.txt](http://_vscodecontentref_/0)
+pip install -r requirements.txt
 ```
 
 ## Présentation
