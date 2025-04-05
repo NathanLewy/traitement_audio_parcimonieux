@@ -1,6 +1,6 @@
 # Projet de Traitement du Signal
 
-Ce projet est une collection de scripts et de données pour l'analyse et le traitement du signal, avec un focus particulier sur des techniques comme la parcimonie, la décomposition en ondelettes, et l'analyse de signaux audio.
+Ce repository rassemble toutes les réponses au travaux de laboratoire sur la représentation parcimonieuse des signaux.
 
 ## Structure du Projet
 
@@ -23,16 +23,16 @@ Ce projet est une collection de scripts et de données pour l'analyse et le trai
   - `viz.py` : Scripts pour la visualisation des résultats.
 - **Dossiers :**
   - `database_finale/` : Contient les fichiers CSV des données (`X_SONS.csv`, `y_SONS.csv`, etc.).
-  - `SONS/`, `SONS_features/`, `SONS_VC_features/`, `SONS-VC/` : Dossiers contenant les données audio et leurs caractéristiques.
+  - `SONS/`, `SONS_features/`, `SONS_VC_features/`, `SONS-VC/` : Dossiers contenant les données audio et leurs caractéristiques des oiseaux.
 
 ### Partie 4 : Compression et Reconstruction
 - **Fichiers :**
-  - `partie4_basispursuit.py` : Implémentation de la méthode Basis Pursuit.
-  - `partie4_taux_compression.py` : Analyse des taux de compression.
-  - `partie4_tout_signal.py` : Reconstruction de signaux entiers.
-  - `partie4_une_fenetre.py` : Reconstruction sur une fenêtre spécifique.
+  - `partie4_basispursuit.py` : Implémentation de la méthode Basis Pursuit, qui comme expliquée dans la présentation, ne converge pas.
+  - `partie4_taux_compression.py` : Analyse de la définition étendue (expliquée dans la présentation) du taux de compression.
+  - `partie4_tout_signal.py` : Reconstruction de signaux entiers selon la compression par Matching Pursuit et Orthogonal Matching Pursuit. On définit un objet compresseur et deux objets solveurs (MP et OMP)
+  - `partie4_une_fenetre.py` : Reconstruction sur une fenêtre spécifique par Matching Pursuit et affichage de quelques éléments du dictionnaire.
 - **Dossiers :**
-  - `audio_partie4/` : Fichiers audio pour cette partie.
+  - `audio_partie4/` : Fichier audio en allemand utilisé pour cette partie.
   - `tracés/` : Graphiques et visualisations générés.
 
 ## Prérequis
@@ -41,3 +41,8 @@ Les dépendances nécessaires sont listées dans le fichier [`requirements.txt`]
 
 ```bash
 pip install -r [requirements.txt](http://_vscodecontentref_/0)
+```
+
+## Présentation
+
+Afin de comprendre notre démarche, les diapositives de la présentation sont données dans le fichier pdf.
