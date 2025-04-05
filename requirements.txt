@@ -1,0 +1,9 @@
+numpy
+scipy
+matplotlib
+pywt
+scikit-learn
+pandas
+seaborn
+soundfile
+sounddevice

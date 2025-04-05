@@ -65,49 +65,8 @@ def matching_pursuit(x, dictionary, max_iter, tol=1e-7, verbose=False):
         plt.title('erreur en dB en fonction de l\'itération')
         plt.xlabel('n° iteration')
         plt.ylabel('erreur en db')
-        plt.legend()
         plt.show()
     return approx, coeffs, indices, x - approx
-
-def compress(data, dictionary, window_size, step_size, max_iter, tol=1e-7):
-    i = 0
-    t1 = time.time()
-    n_coeffs=0
-    if len(data)%window_size>0:
-        signal_recomposed = np.zeros(len(data)+(window_size-len(data)%window_size))
-    else:
-        signal_recomposed = np.zeros(len(data))
-
-    while i+window_size<len(data):
-        x = data[i:window_size+i]*np.hamming(window_size)
-        approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter, verbose=False)
-        signal_recomposed[i:window_size+i]+=approx
-        n_coeffs += len(coeffs)
-        print(len(coeffs))
-        i+=step_size
-        print(f'avancement du calcul {i/len(data)*100} %')
-
-    x = np.pad(data[i:], (0, window_size-len(data[i:])), mode='constant')*np.hamming(window_size)
-    approx, coeffs, indices, residual = matching_pursuit(x, dictionary, max_iter=max_iter ,verbose=False)
-    
-    signal_recomposed[i:]+=approx
-    plt.plot(data)
-    plt.plot(signal_recomposed)
-    plt.show()
-
-    t2 = time.time()
-    print(f"Arrêt à l'itération     : {i}")
-    print(f'RSB                     : {np.linalg.norm(data)/np.linalg.norm(data-signal_recomposed[:len(data)])}')
-    print(f'tolérance du résidu     : {tol}')
-    print(f'taille du dictionnaire  : {len(dictionary[0])}')
-    print(f'temps d execution       : {t2-t1}')
-    print(f'taux de compression     : {len(data) / n_coeffs}')
-
-    sd.play(data, samplerate=sr)
-    sd.wait() 
-
-    sd.play(signal_recomposed, samplerate=sr)
-    sd.wait()
 
 
 
@@ -149,5 +108,3 @@ for i in range(N_atomes_show):
     plt.plot(np.linspace(0, len(atome_)/sr, len(atome_)), atome_)
 plt.show()
 
-#sur tout le signal
-compress(data, dictionary, window_size, 512, max_iter=150, tol=1e-7)

@@ -11,85 +11,8 @@ from scipy.optimize import linprog
 from scipy.signal import butter, filtfilt
 
 
-
-
-class MatchingPursuitSolver:
-    def __init__(self, max_iter=120):
-        self.max_iter = max_iter
-
-    def solve(self, x, dictionary, tol=1e-7):
-        approx = np.zeros_like(x)
-        coeffs, indices = [], []
-        for _ in range(self.max_iter):
-            projections = dictionary.T @ (x - approx)
-            k = np.argmax(np.abs(projections))
-            a_k = projections[k]
-            approx += a_k * dictionary[:, k]
-            coeffs.append(a_k)
-            indices.append(k)
-            if np.linalg.norm(x - approx) < tol:
-                break
-        return approx, coeffs, indices
-
-class OrthogonalMatchingPursuitSolver:
-    def __init__(self, max_iter=120):
-        self.max_iter = max_iter
-
-    def solve(self, x, dictionary, tol=1e-4):
-        r = x.copy()
-        liste_proj = []  # Atomes bruts sélectionnés dans le dictionnaire
-        liste_u = []     # Vecteurs orthonormaux issus de l'innovation
-        
-        for _ in range(self.max_iter):
-            if np.sqrt(np.dot(r, r)) / np.sqrt(np.dot(x, x)) < tol:
-                break
-            if np.sqrt(np.dot(r, r)) / np.sqrt(np.dot(x, x)) > 1:
-                print('RSB impossible')
-
-            # Sélection du meilleur atome selon la corrélation avec le résidu
-            projections = dictionary.T @ r
-            k = np.argmax(np.abs(projections))
-            meilleur_atome = dictionary[:, k]
-
-            # Projection du résidu sur le meilleur atome
-            proj_residu_sur_atome = np.dot(meilleur_atome, r) * meilleur_atome
-
-            # Orthogonalisation de la projection par rapport aux vecteurs déjà sélectionnés
-            if liste_u:
-                proj_orthogonal = np.zeros_like(liste_u[0])
-                for u in liste_u:
-                    proj_orthogonal += np.dot(proj_residu_sur_atome, u) * u
-            else:
-                proj_orthogonal = 0
-
-            # Calcul du vecteur innovation et normalisation
-            vecteur_innovation = proj_residu_sur_atome - proj_orthogonal
-            norm_innovation = np.sqrt(np.dot(vecteur_innovation, vecteur_innovation))
-            if norm_innovation == 0:
-                break
-            vecteur_orthogonal = vecteur_innovation / norm_innovation
-
-            # Mise à jour du résidu par soustraction de sa composante sur le vecteur orthonormal
-            r = r - np.dot(vecteur_orthogonal, r) * vecteur_orthogonal
-
-            # Stockage de l'atome sélectionné et de son vecteur orthonormal associé
-            liste_proj.append(meilleur_atome)
-            liste_u.append(vecteur_orthogonal)
-
-        # Résolution du système linéaire pour obtenir les coefficients finaux
-        M = np.matmul(np.array(liste_u), np.array(liste_proj).T)
-        m_vec = np.array([np.dot(x, u) for u in liste_u])
-        if M.shape[0] > 0:
-            coeffs = np.linalg.solve(M, m_vec)
-        else:
-            coeffs = []
-        approx = np.sum([coeffs[i] * liste_proj[i] for i in range(len(coeffs))], axis=0)
-        indices = [np.argmax(np.abs(dictionary.T @ atom)) for atom in liste_proj]
-
-        return approx, coeffs, indices
-
 class AudioCompressor:
-    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=80, sr=16000, wavelet_names=['rbio5.5','bior3.1'], solver_type='mp'):
+    def __init__(self, file_path, window_size=1024, step_size=512, max_iter=80, sr=16000, wavelet_names=['rbio3.3', 'bior3.5', 'bior5.5', 'bior6.8'], solver_type='mp'):
         self.file_path = file_path
         self.window_size = window_size
         self.step_size = step_size
@@ -212,6 +135,92 @@ class AudioCompressor:
         self.max_iter = newmaxit
         self.solver.max_iter = newmaxit
 
+
+
+
+
+class MatchingPursuitSolver:
+    def __init__(self, max_iter=120):
+        self.max_iter = max_iter
+
+    def solve(self, x, dictionary, tol=1e-7):
+        approx = np.zeros_like(x)
+        coeffs, indices = [], []
+        for _ in range(self.max_iter):
+            projections = dictionary.T @ (x - approx)
+            k = np.argmax(np.abs(projections))
+            a_k = projections[k]
+            approx += a_k * dictionary[:, k]
+            coeffs.append(a_k)
+            indices.append(k)
+            if np.linalg.norm(x - approx) < tol:
+                break
+        return approx, coeffs, indices
+
+
+
+
+
+class OrthogonalMatchingPursuitSolver:
+    def __init__(self, max_iter=120):
+        self.max_iter = max_iter
+
+    def solve(self, x, dictionary, tol=1e-4):
+        r = x.copy()
+        liste_proj = []  # Atomes bruts sélectionnés dans le dictionnaire
+        liste_u = []     # Vecteurs orthonormaux issus de l'innovation
+        
+        for _ in range(self.max_iter):
+            if np.sqrt(np.dot(r, r)) / np.sqrt(np.dot(x, x)) < tol:
+                break
+            if np.sqrt(np.dot(r, r)) / np.sqrt(np.dot(x, x)) > 1:
+                print('RSB impossible')
+
+            # Sélection du meilleur atome selon la corrélation avec le résidu
+            projections = dictionary.T @ r
+            k = np.argmax(np.abs(projections))
+            meilleur_atome = dictionary[:, k]
+
+            # Projection du résidu sur le meilleur atome
+            proj_residu_sur_atome = np.dot(meilleur_atome, r) * meilleur_atome
+
+            # Orthogonalisation de la projection par rapport aux vecteurs déjà sélectionnés
+            if liste_u:
+                proj_orthogonal = np.zeros_like(liste_u[0])
+                for u in liste_u:
+                    proj_orthogonal += np.dot(proj_residu_sur_atome, u) * u
+            else:
+                proj_orthogonal = 0
+
+            # Calcul du vecteur innovation et normalisation
+            vecteur_innovation = proj_residu_sur_atome - proj_orthogonal
+            norm_innovation = np.sqrt(np.dot(vecteur_innovation, vecteur_innovation))
+            if norm_innovation == 0:
+                break
+            vecteur_orthogonal = vecteur_innovation / norm_innovation
+
+            # Mise à jour du résidu par soustraction de sa composante sur le vecteur orthonormal
+            r = r - np.dot(vecteur_orthogonal, r) * vecteur_orthogonal
+
+            # Stockage de l'atome sélectionné et de son vecteur orthonormal associé
+            liste_proj.append(meilleur_atome)
+            liste_u.append(vecteur_orthogonal)
+
+        # Résolution du système linéaire pour obtenir les coefficients finaux
+        M = np.matmul(np.array(liste_u), np.array(liste_proj).T)
+        m_vec = np.array([np.dot(x, u) for u in liste_u])
+        if M.shape[0] > 0:
+            coeffs = np.linalg.solve(M, m_vec)
+        else:
+            coeffs = []
+        approx = np.sum([coeffs[i] * liste_proj[i] for i in range(len(coeffs))], axis=0)
+        indices = [np.argmax(np.abs(dictionary.T @ atom)) for atom in liste_proj]
+
+        return approx, coeffs, indices
+
+
+
+
 if __name__ == "__main__":
     file_path = os.path.abspath('./Partie_4/audio_partie4/a.wav')
     liste_maxit = range(10,150, 10)
@@ -221,7 +230,6 @@ if __name__ == "__main__":
     max=0
     best_dict=[]
     for loop in range(1):
-        print(loop, best_dict)
         wavelet_names = np.random.choice(wavelet_list,4, replace=False)
         solver_type = 'mp' 
         compressor = AudioCompressor(file_path, solver_type=solver_type,wavelet_names=wavelet_names)
@@ -230,26 +238,29 @@ if __name__ == "__main__":
         if RSB >max:
             best_dict = wavelet_names
             max = RSB
+        print(f'etape n° {loop} : ', best_dict)
     
     print(f'meilleur dico trouvé sur cette itération : {wavelet_names}')
     print(f'on prend finalement : [rbio3.3 bior3.5 bior5.5 bior6.8]')
+
 
     best_dict = ['rbio3.3', 'bior3.5', 'bior5.5', 'bior6.8']
     
     
     solver_type = 'mp' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict[:2])
-    print(f'forme du dictionnaire : {np.shape(compressor.dictionary)}')
+    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict)
+    print(f'forme du dictionnaire final : {np.shape(compressor.dictionary)}')
     approx, tcomp, RSB, tex = compressor.compress()
+    print('\n   Rapport de compression pour les paramètres par défaut de MP:')
     compressor.compression_report()
     
-    print('\n matching pursuit :')
+    print('\n   Matching pursuit pour différents maxits:')
     liste_RSB=[]
     liste_tex=[]
     liste_tcomp = []
 
     for i in liste_maxit:
-        print(i)
+        print(f'compression pour maxit = {i}')
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
         liste_RSB.append(RSB)
@@ -277,17 +288,20 @@ if __name__ == "__main__":
     plt.title('MP - taux de compression en fonction de maxit')
     plt.show()
 
-    print('\n orthogonal matching pursuit :')
+    
     solver_type = 'omp' 
-    compressor = AudioCompressor(file_path, solver_type=solver_type)
+    compressor = AudioCompressor(file_path, solver_type=solver_type, wavelet_names=best_dict)
     approx, tcomp, RSB, tex = compressor.compress()
+    print('\n   Rapport de compression pour les paramètres par défaut de OMP:')
     compressor.compression_report()
 
+
+    print('\n   Orthogonal matching pursuit pour différents maxits:')
     liste_RSB=[]
     liste_tex=[]
     liste_tcomp=[]
     for i in liste_maxit:
-        print(i)
+        print(f'compression pour maxit = {i}')
         compressor.change_maxit(i)
         approx, tcomp, RSB, tex = compressor.compress()
         liste_RSB.append(RSB)
