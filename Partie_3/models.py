@@ -25,14 +25,14 @@ def tracer_heatmap(scores, gammas, C_list, titre):
     plt.show()
 
 # Spécifiez le chemin du répertoire contenant la base de données finale
-database_folder = '/home/pierres/ST7/traitement_audio_parcimonieux/TL_3_pierre/database_finale'
+database_folder = '/home/pierres/ST7/traitement_audio_parcimonieux/Partie_3/database_finale'
 
 # Charger les données
 X_SONS, X_SONS_VC, y_SONS, y_SONS_VC = charger_donnees(database_folder)
 
 # Définir une gamme de valeurs pour gamma (RBF)
-gammas = np.logspace(-1, 1, 2)  # Réduire pour la visualisation
-C_list = np.logspace(-5, 5, 2)  # Réduire pour la visualisation
+gammas = np.logspace(-1, 1, 10)  # Réduire pour la visualisation
+C_list = np.logspace(-5, 5, 10)  # Réduire pour la visualisation
 
 scaler = StandardScaler()
 X_SONS = scaler.fit_transform(X_SONS)

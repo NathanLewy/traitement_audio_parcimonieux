@@ -211,6 +211,7 @@ best_threshold = None
 for wavelet in wavelets:
     for threshold in thresholds:
             for level in range(1,31):
+                print("iteration" + str(wavelet) + str(threshold) + str(level))
                 reconstructed_signal = filter_and_reconstruct_bis(sine_wave_with_noise, wavelet, threshold,level)
                 reconstructed_noise = reconstructed_signal - sine_wave
                 snr_ratio = np.sum(original_noise**2) / np.sum(reconstructed_noise**2)

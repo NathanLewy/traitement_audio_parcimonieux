@@ -18,8 +18,8 @@ Ce repository rassemble toutes les réponses au travaux de laboratoire sur la re
 
 ### Partie 3 : Modélisation et Visualisation
 - **Fichiers :**
-  - `data.py` : Gestion et prétraitement des données.
-  - `models.py` : Implémentation des modèles pour l'analyse.
+  - `data.py` : Gestion et prétraitement des données. A LANCER EN PREMIER
+  - `models.py` : Implémentation des modèles pour l'analyse. A LANCER APRES AVOIR LANCER data.py
   - `viz.py` : Scripts pour la visualisation des résultats.
 - **Dossiers :**
   - `database_finale/` : Contient les fichiers CSV des données (`X_SONS.csv`, `y_SONS.csv`, etc.).
