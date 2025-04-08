@@ -43,6 +43,8 @@ Les dépendances nécessaires sont listées dans le fichier [`requirements.txt`]
 pip install -r requirements.txt
 ```
 
+Il est possible qu'il faille changer le path d'éxecution dans les fichiers python si vous rencontrez des erreurs.
+
 ## Présentation
 
 Afin de comprendre notre démarche, les diapositives de la présentation sont données dans le fichier pdf.
